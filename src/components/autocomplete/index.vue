@@ -63,7 +63,6 @@ import {
 } from './regexUtils';
 import useFilterOptions from '@/components/autocomplete/useFilterOptions';
 import useDomHandler from '@/components/autocomplete/useDomHandler';
-import { longStackSupport } from 'q';
 /*
   Component should:
   - Accept options as a prop
@@ -174,52 +173,56 @@ export default {
   setup(props, {
     emit,
   }) {
-    const refs = reactive({
+    /**
+     * REACTIVE VARIABLES
+     */
+    const elementRefs = reactive({
       autocompleteContainer: null,
       menu: null,
       input: null,
     });
-
     const inputIsFocused = ref(false);
     const query = ref('');
     const selectedOption = ref(props.selected);
     const focusedOptionIndex = ref(0);
-
+    /**
+     * REUSABLE UTILS
+     */
     const {
       activeElement,
       setActiveElement,
-      clearActiveElement,
     } = useDomHandler();
-
+    const {
+      filteredOptions,
+    } = useFilterOptions(query, props.options);
+    /**
+     * SELECTED OPTION HANDLING
+     */
     const setSelectedOption = (option) => {
       if (!option.disabled) {
         selectedOption.value = option;
         query.value = option.label;
       }
     };
-
     const clearSelectedOption = () => {
       selectedOption.value = {};
     };
-
-    const {
-      filteredOptions,
-    } = useFilterOptions(query, props.options);
-
+    /**
+     * MOUNTED HOOK
+     */
+    // Set initial selection if value is provided through prop
+    // Needs to be here to have setSelectedOption defined first
     onMounted(() => {
       if (props.selected && Object.keys(props.selected).length > 0) {
         setSelectedOption(props.selected);
       }
     });
-
-    const resetOptionIndex = () => {
-      focusedOptionIndex.value = 0;
-    };
-
+    /**
+     * INPUT STATE HANDLING
+     */
     const focusInput = () => {
       inputIsFocused.value = true;
     };
-
     const blurInput = () => {
       setTimeout(() => {
         inputIsFocused.value = false;
@@ -228,23 +231,13 @@ export default {
         }
       }, 50);
     };
-
+    //  Determines whether the options menu should be shown
     const isMenuVisible = computed(() => (
       props.showMenuOnFocus
         ? (props.showMenuOnFocus && inputIsFocused.value)
         : query.value.trim().length > 0 && (inputIsFocused.value && !props.showMenuOnFocus)
     ));
-
-    const autocompleteClassObject = computed(() => ({
-      [`c-Autocomplete--${props.state}`]: props.state,
-      'c-Autocomplete--has-open-menu': isMenuVisible.value,
-      'c-Autocomplete--borderless': !props.showBorder,
-    }));
-
-    const optionClassObject = option => ({
-      'c-Autocomplete__option--is-disabled': option.disabled,
-    });
-
+    //  Controls the options menu positioning
     const menuPositioning = computed(() => {
       const marginOffset = 15;
       const windowWidth = window.innerWidth;
@@ -258,12 +251,12 @@ export default {
         overflow: 'auto',
       };
 
-      if (refs.menu) {
+      if (elementRefs.menu) {
         const {
           right,
           left,
           bottom,
-        } = refs.menu.getBoundingClientRect();
+        } = elementRefs.menu.getBoundingClientRect();
 
         //  Horizontal alignment
         if (right > windowWidth) {
@@ -291,40 +284,25 @@ export default {
 
       return styles;
     });
-
-    const renderedOptionLabel = (option) => {
-      if (query.value.trim().length > 0 && props.highlightMatches) {
-        return highlightMatches(query.value, option.label, 'c-Autocomplete__highlightedChar');
-      }
-      return option.label;
-    };
-
-    watch(focusedOptionIndex, (newIndex) => {
-      const option = document.querySelector(`[name="${props.optionsName}"]:not(:disabled):nth-child(${newIndex})`);
-
-      if (option !== null) {
-        setActiveElement(option);
-        //  Add selected state to option item & scroll to it
-        option.classList.add('is-highlighted');
-        option.scrollIntoView();
-
-        //  Remove select state from all other option items
-        document
-          .querySelectorAll(`[name="${props.optionsName}"]:not(:nth-child(${newIndex}))`)
-          .forEach((el) => {
-            el.classList.remove('is-highlighted');
-          });
-      } else {
-        resetOptionIndex();
-      }
+    /**
+     * DYNAMIC CLASSES
+     */
+    const autocompleteClassObject = computed(() => ({
+      [`c-Autocomplete--${props.state}`]: props.state,
+      'c-Autocomplete--has-open-menu': isMenuVisible.value,
+      'c-Autocomplete--borderless': !props.showBorder,
+    }));
+    const optionClassObject = option => ({
+      'c-Autocomplete__option--is-disabled': option.disabled,
     });
-
+    /**
+     * KEYBOARD ACCESSIBILITY CONTROL
+     */
     const handleKeyboardNavigation = (e) => {
       e.preventDefault();
-
       const availableOptionsLength = filteredOptions.value.length;
-
       switch (e.keyCode) {
+        // Enter
         case 13:
           if (activeElement.value !== null) {
             setSelectedOption(filteredOptions
@@ -335,7 +313,7 @@ export default {
             }, 60);
           }
           break;
-
+        // Up
         case 38:
           if (focusedOptionIndex.value - 1 > 0) {
             focusedOptionIndex.value -= 1;
@@ -343,7 +321,7 @@ export default {
             focusedOptionIndex.value = availableOptionsLength;
           }
           break;
-
+        // Down
         default:
         case 40:
           if (focusedOptionIndex.value + 1 <= availableOptionsLength) {
@@ -354,10 +332,41 @@ export default {
           break;
       }
     };
+    /**
+     * OPTION RENDERING & SELECTION
+     */
+    const resetOptionIndex = () => {
+      focusedOptionIndex.value = 0;
+    };
+    const renderedOptionLabel = (option) => {
+      if (query.value.trim().length > 0 && props.highlightMatches) {
+        return highlightMatches(query.value, option.label, 'c-Autocomplete__highlightedChar');
+      }
+      return option.label;
+    };
+    // Selects a DOM element (option item) based on focusedOptionIndex value
+    watch(focusedOptionIndex, (newIndex) => {
+      const option = document.querySelector(`[name="${props.optionsName}"]:not(:disabled):nth-child(${newIndex})`);
 
-    /*
-      Event emission
-    */
+      if (option !== null) {
+        setActiveElement(option);
+        //  Add selected state to option item
+        option.classList.add('is-highlighted');
+        option.scrollIntoView();
+        //  Remove select state from all other option items
+        document
+          .querySelectorAll(`[name="${props.optionsName}"]:not(:nth-child(${newIndex}))`)
+          .forEach((el) => {
+            el.classList.remove('is-highlighted');
+          });
+      } else {
+        resetOptionIndex();
+      }
+    });
+    /**
+     * EVENTS EMISSION
+     */
+    //  Dispatched 'change' event when selectedOption changes
     watch(selectedOption, (value) => {
       if (typeof value !== 'undefined') {
         emit('change', value);
@@ -365,9 +374,8 @@ export default {
         emit('change', {});
       }
     });
-
     return {
-      ...toRefs(refs),
+      ...toRefs(elementRefs),
       query,
       focusInput,
       blurInput,
