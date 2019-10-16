@@ -191,6 +191,7 @@ export default {
     const {
       activeElement,
       setActiveElement,
+      scrollIntoView,
     } = useDomHandler();
     const {
       filteredOptions,
@@ -230,6 +231,12 @@ export default {
           clearSelectedOption();
         }
       }, 50);
+    };
+    /**
+     * MENU CONTROL
+     */
+    const deactivateArrows = (e) => {
+      e.preventDefault();
     };
     //  Determines whether the options menu should be shown
     const isMenuVisible = computed(() => (
@@ -296,7 +303,7 @@ export default {
       'c-Autocomplete__option--is-disabled': option.disabled,
     });
     /**
-     * KEYBOARD ACCESSIBILITY CONTROL
+     * KEYBOARD CONTROL
      */
     const handleKeyboardNavigation = (e) => {
       e.preventDefault();
@@ -352,7 +359,8 @@ export default {
         setActiveElement(option);
         //  Add selected state to option item
         option.classList.add('is-highlighted');
-        option.scrollIntoView();
+        // option.scrollIntoView();
+        scrollIntoView(elementRefs.menu, option);
         //  Remove select state from all other option items
         document
           .querySelectorAll(`[name="${props.optionsName}"]:not(:nth-child(${newIndex}))`)
