@@ -4,11 +4,6 @@
     class="c-Autocomplete"
     :class="autocompleteClassObject"
   >
-    <div
-      v-if="isMenuVisible"
-      class="c-Autocomplete__overlay"
-      @click="handleOverlayClick"
-    />
     <label
       v-if="showLabel"
       :for="id"
@@ -68,6 +63,7 @@ import {
 } from './regexUtils';
 import useFilterOptions from '@/components/autocomplete/useFilterOptions';
 import useDomHandler from '@/components/autocomplete/useDomHandler';
+import { longStackSupport } from 'q';
 /*
   Component should:
   - Accept options as a prop
@@ -252,6 +248,7 @@ export default {
     const menuPositioning = computed(() => {
       const marginOffset = 15;
       const windowWidth = window.innerWidth;
+      const windowHeight = window.innerHeight;
       const maxWidth = Math.floor(windowWidth / 2) - marginOffset;
 
       let styles = {
@@ -265,14 +262,29 @@ export default {
         const {
           right,
           left,
+          bottom,
         } = refs.menu.getBoundingClientRect();
 
+        //  Horizontal alignment
         if (right > windowWidth) {
           const w = windowWidth - left - marginOffset;
 
           styles = {
             ...styles,
             width: `${w}px`,
+          };
+        }
+
+        //  Vertical alignment
+        if (bottom > windowHeight && inputIsFocused.value) {
+          styles = {
+            ...styles,
+            bottom: '34px',
+          };
+        } else {
+          styles = {
+            ...styles,
+            top: '34px',
           };
         }
       }
@@ -343,14 +355,6 @@ export default {
       }
     };
 
-    const handleOverlayClick = () => {
-      if (activeElement.value !== null && activeElement.value.name !== props.optionsName) {
-        setTimeout(() => {
-          clearActiveElement();
-        }, 50);
-      }
-    };
-
     /*
       Event emission
     */
@@ -367,7 +371,6 @@ export default {
       query,
       focusInput,
       blurInput,
-      handleOverlayClick,
       handleKeyboardNavigation,
       renderedOptionLabel,
       setSelectedOption,
@@ -422,13 +425,6 @@ export default {
     }
   }
 
-  &__overlay {
-    position: absolute;
-    width: 100%;
-    height: 100vh;
-    max-height: 350px;
-  }
-
   &__wrapper {
     position: relative;
     &:after {
@@ -476,7 +472,6 @@ export default {
 
   &__selectMenu {
     position: absolute;
-    top: 34px;
     left: 0;
     display: flex;
     flex-direction: column;
