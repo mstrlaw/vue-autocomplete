@@ -2,7 +2,7 @@
   <div
     ref="autocompleteContainer"
     class="c-Autocomplete"
-    :class="classObject"
+    :class="autocompleteClassObject"
   >
     <div
       v-if="isMenuVisible"
@@ -13,7 +13,7 @@
       v-if="showLabel"
       :for="id"
       class="c-Autocomplete__label"
-      v-text="'Choose a flavor'"
+      v-text="label"
     />
     <div class="c-Autocomplete__wrapper">
       <input
@@ -21,9 +21,11 @@
         :id="id"
         :name="inputName"
         :placeholder="placeholder"
+        :disabled="disabled"
         v-model="query"
         class="c-Autocomplete__input"
         autocomplete="off"
+        @input="focusInput"
         @focus="focusInput"
         @blur="blurInput"
         @keydown.up.down.enter="handleKeyboardNavigation"
@@ -40,8 +42,10 @@
             :key="index"
             :value="option.value"
             :name="optionsName"
+            :disabled="option.disabled"
             v-html="renderedOptionLabel(option)"
             class="c-Autocomplete__option"
+            :class="optionClassObject(option)"
             @click.prevent="setSelectedOption(option)"
           />
         </div>
@@ -192,8 +196,10 @@ export default {
     } = useDomHandler();
 
     const setSelectedOption = (option) => {
-      selectedOption.value = option;
-      query.value = option.label;
+      if (!option.disabled) {
+        selectedOption.value = option;
+        query.value = option.label;
+      }
     };
 
     const clearSelectedOption = () => {
@@ -233,10 +239,15 @@ export default {
         : query.value.trim().length > 0 && (inputIsFocused.value && !props.showMenuOnFocus)
     ));
 
-    const classObject = computed(() => ({
+    const autocompleteClassObject = computed(() => ({
       [`c-Autocomplete--${props.state}`]: props.state,
+      'c-Autocomplete--has-open-menu': isMenuVisible.value,
       'c-Autocomplete--borderless': !props.showBorder,
     }));
+
+    const optionClassObject = option => ({
+      'c-Autocomplete__option--is-disabled': option.disabled,
+    });
 
     const menuPositioning = computed(() => {
       const marginOffset = 15;
@@ -271,13 +282,13 @@ export default {
 
     const renderedOptionLabel = (option) => {
       if (query.value.trim().length > 0 && props.highlightMatches) {
-        return highlightMatches(query.value, option.label);
+        return highlightMatches(query.value, option.label, 'c-Autocomplete__highlightedChar');
       }
       return option.label;
     };
 
     watch(focusedOptionIndex, (newIndex) => {
-      const option = document.querySelector(`[name="${props.optionsName}"]:nth-child(${newIndex})`);
+      const option = document.querySelector(`[name="${props.optionsName}"]:not(:disabled):nth-child(${newIndex})`);
 
       if (option !== null) {
         setActiveElement(option);
@@ -296,7 +307,6 @@ export default {
       }
     });
 
-
     const handleKeyboardNavigation = (e) => {
       e.preventDefault();
 
@@ -308,7 +318,9 @@ export default {
             setSelectedOption(filteredOptions
               .value
               .find(option => option.value === parseInt(activeElement.value.getAttribute('value'), 10)));
-            setTimeout(() => clearActiveElement, 50);
+            setTimeout(() => {
+              blurInput();
+            }, 60);
           }
           break;
 
@@ -362,7 +374,8 @@ export default {
       filteredOptions,
       menuPositioning,
       isMenuVisible,
-      classObject,
+      autocompleteClassObject,
+      optionClassObject,
     };
   },
 };
@@ -402,6 +415,13 @@ export default {
     border-radius: 0;
   }
 
+  &--has-open-menu &__wrapper {
+    &:after{
+      transform: rotate(180deg);
+      transition: transform .3s ease;
+    }
+  }
+
   &__overlay {
     position: absolute;
     width: 100%;
@@ -423,6 +443,8 @@ export default {
       background-position: center;
       background-repeat: no-repeat;
       background-image: url('data:image/svg+xml,%3Csvg width="11" height="7" viewBox="0 0 11 7" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M5.166 4.21L8.976.4a.795.795 0 0 1 1.125 1.125l-4.409 4.41a.795.795 0 0 1-1.288-.238L.233 1.527A.795.795 0 0 1 1.358.401L5.166 4.21z" fill="%23343F50" fill-rule="evenodd"/%3E%3C/svg%3E%0A');
+      transform: rotate(0deg);
+      transition: transform .3s ease;
     }
   }
 
@@ -443,6 +465,13 @@ export default {
     background-color: $un-white;
     -webkit-appearance: none;
     cursor: pointer;
+
+    // Disabled state
+    &[disabled] {
+      color: $un-gray1-dark;
+      border-color: $un-gray1-dark;
+      cursor: not-allowed;
+    }
   }
 
   &__selectMenu {
@@ -470,15 +499,32 @@ export default {
     text-overflow: ellipsis;
     white-space: nowrap;
 
+    &:hover {
+      background-color: darken(#EEE, 5%);
+    }
+
     &.is-highlighted,
     &:focus {
       background-color: #EEE;
     }
-    &:hover {
-      background-color: darken(#EEE, 5%);
+
+    &--is-disabled {
+      color: $un-gray2;
+
+      &:focus,
+      &.is-highlighted,
+      &:hover {
+        background-color: #FFF;
+        cursor: default;
+      }
+
+      /deep/ b {
+        color: $un-gray2!important;
+      }
     }
+
     /deep/ b {
-      color: darken(pink, 5%);
+      color: $un-purple;
     }
   }
 }

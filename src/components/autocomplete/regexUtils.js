@@ -60,7 +60,7 @@ const extractMatchIndexes = (partialMatches, originalString) => {
   return indexes;
 };
 
-export function highlightMatches(query, originalString) {
+export function highlightMatches(query, originalString, highlightClass) {
   let highlightedString = originalString;
 
   const regExp = buildHighlightRegExp(query);
@@ -75,7 +75,7 @@ export function highlightMatches(query, originalString) {
       indexes = indexes.sort((a, b) => b.position - a.position);
 
       indexes.forEach((index) => {
-        highlightedString = `${highlightedString.slice(0, index.position)}<b class="c-Autocomplete__highlightedChar">${index.str}</b>${highlightedString.substr(index.position + index.length)}`;
+        highlightedString = `${highlightedString.slice(0, index.position)}<b class="${highlightClass}">${index.str}</b>${highlightedString.substr(index.position + index.length)}`;
       });
     }
   }

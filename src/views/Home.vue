@@ -6,47 +6,73 @@
         <Autocomplete
           :id="'default'"
           :options="domains"
+          :label="'Available domains'"
+          :placeholder="'Select a domain'"
           @change="saveFirstOption"
         />
+        <br>
         <br>
         {{ firstSelection }}
       </section>
       <section class="is-half">
-        <h4>With wide menu options</h4>
-      <Autocomplete
-        :id="'wideOptions'"
-        :options="urls"
-        @change="saveFourthOption"
-      />
-      <br>
-      {{ fourthSelection }}
+        <h4>With an initial selection</h4>
+        <Autocomplete
+          :id="'initialSelection'"
+          :options="sectionNine"
+          :label="'Section 9 investigators'"
+          :placeholder="'Pick a character'"
+          :selected="initialValue"
+          @change="saveThirdOption"
+        />
+        <br>
+        <br>
+        {{ thirdSelection }}
       </section>
     </div>
     <br>
     <hr />
     <div class="side-by-side">
       <section class="is-half">
-        <h4>With an initial selection</h4>
-        <Autocomplete
-          :id="'initialSelection'"
-          :options="flavors"
-          :selected="initialValue"
-          @change="saveThirdOption"
-        />
-        <br>
-        {{ thirdSelection }}
-      </section>
-      <section class="is-half">
         <h4>Menu only shown on keyboard input &amp; typed query</h4>
         <Autocomplete
           :id="'hideMenu'"
           :options="flavors"
-          :placeholder="'Select..'"
+          :label="'Select a flavor'"
+          :placeholder="'Type to search..'"
           :showMenuOnFocus="false"
           @change="saveSecondOption"
         />
         <br>
+        <br>
         {{ secondSelection }}
+      </section>
+      <section class="is-half">
+        <h4>With wide menu options</h4>
+        <Autocomplete
+          :id="'wideOptions'"
+          :options="urls"
+          @change="saveFourthOption"
+        />
+        <br>
+        <br>
+        {{ fourthSelection }}
+      </section>
+    </div>
+    <br>
+    <hr />
+    <div class="side-by-side">
+      <section class="is-half">
+        <h4>Disabled input</h4>
+        <Autocomplete
+          :id="'disabled'"
+          :disabled="true"
+          :options="flavors"
+          :label="'Select a flavor'"
+          :placeholder="'Type to search..'"
+        />
+      </section>
+      <section class="is-half" >
+        <b>TODO</b>: required validation
       </section>
     </div>
   </div>
@@ -57,6 +83,8 @@
 import Autocomplete from '@/components/autocomplete/index.vue';
 import domains from '@/mockData/domains';
 import urls from '@/mockData/urls';
+import sectionNine from '@/mockData/sectionNine';
+import flavors from '@/mockData/flavors';
 
 export default {
   name: 'home',
@@ -67,32 +95,12 @@ export default {
     return {
       domains,
       urls,
-      flavors: [
-        {
-          value: 1,
-          label: 'Chocolate Icecream',
-        },
-        {
-          value: 2,
-          label: 'Coconut Cookie',
-        },
-        {
-          value: 3,
-          label: 'Cookie Mint Chocolate',
-        },
-        {
-          value: 4,
-          label: 'Strawberry Cake',
-        },
-        {
-          value: 5,
-          label: 'Vanilla Icecream',
-        },
-      ],
+      sectionNine,
+      flavors,
       // Local selections
       initialValue: {
-        value: 2,
-        label: 'Coconut Cookie',
+        value: 3,
+        label: 'Major Motoko Kusanagi',
       },
       firstSelection: {},
       secondSelection: {},
