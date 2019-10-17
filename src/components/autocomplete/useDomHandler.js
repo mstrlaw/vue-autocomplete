@@ -1,5 +1,9 @@
-/*eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["bar"] }]*/
-/* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["container"] }] */
+/*
+  eslint no-param-reassign: ["error", {
+    "props": true,
+    "ignorePropertyModificationsFor": ["container"]
+  }]
+*/
 
 import {
   ref,

@@ -235,9 +235,6 @@ export default {
     /**
      * MENU CONTROL
      */
-    const deactivateArrows = (e) => {
-      e.preventDefault();
-    };
     //  Determines whether the options menu should be shown
     const isMenuVisible = computed(() => (
       props.showMenuOnFocus
