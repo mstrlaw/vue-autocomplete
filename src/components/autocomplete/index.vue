@@ -2,15 +2,20 @@
   <div
     ref="autocompleteContainer"
     class="c-Autocomplete"
+    role="combobox"
+    :aria-expanded="isMenuVisible"
     :class="autocompleteClassObject"
   >
     <label
       v-if="showLabel"
       :for="id"
+      :id="`${id}_label`"
       class="c-Autocomplete__label"
       v-text="label"
     />
-    <div class="c-Autocomplete__wrapper">
+    <div
+      class="c-Autocomplete__wrapper"
+    >
       <input
         ref="input"
         :id="id"
@@ -20,6 +25,9 @@
         v-model="query"
         class="c-Autocomplete__input"
         autocomplete="off"
+        aria-autocomplete="list"
+        :aria-controls="`${id}_menu`"
+        :aria-owns="`${id}_menu`"
         @input="focusInput"
         @focus="focusInput"
         @blur="blurInput"
@@ -28,24 +36,38 @@
       <transition name="slide">
         <div
           v-if="isMenuVisible"
+          :id="`${id}_menu`"
+          :style="menuPosition"
+          :aria-labelledby="`${id}_label`"
           ref="menu"
+          role="listbox"
           class="c-Autocomplete__selectMenu"
-          :style="menuPositioning"
         >
           <span
             v-for="(option, index) in filteredOptions"
             :key="index"
             :value="option.value"
+            :content="option.label"
             :name="optionsName"
             :disabled="option.disabled"
-            v-html="renderedOptionLabel(option)"
-            class="c-Autocomplete__option"
             :class="optionClassObject(option)"
+            :index="index"
+            aria-selected="false"
+            role="option"
+            class="c-Autocomplete__option"
+            v-html="renderedOptionLabel(option)"
             @click.prevent="setSelectedOption(option)"
           />
         </div>
       </transition>
     </div>
+    <p
+      style="opacity:0;height:1px;width:1px;position:absolute;"
+      id="guess1_alert"
+      role="alert"
+      class="feedback"
+      v-text="alertDialog"
+    />
   </div>
 </template>
 
@@ -185,6 +207,7 @@ export default {
     const query = ref('');
     const selectedOption = ref(props.selected);
     const focusedOptionIndex = ref(0);
+    const alertDialog = ref('');
     /**
      * REUSABLE UTILS
      */
@@ -192,10 +215,22 @@ export default {
       activeElement,
       setActiveElement,
       scrollIntoView,
+      menuPositioning,
     } = useDomHandler();
     const {
       filteredOptions,
     } = useFilterOptions(query, props.options);
+    /**
+     * VOICEOVER CONTROL
+     */
+    const setAlertContent = (content) => {
+      alertDialog.value = content;
+    };
+    watch(filteredOptions, (value) => {
+      if (value.length === 0) {
+        setAlertContent(`No options found for ${query.value}`);
+      }
+    });
     /**
      * SELECTED OPTION HANDLING
      */
@@ -203,6 +238,7 @@ export default {
       if (!option.disabled) {
         selectedOption.value = option;
         query.value = option.label;
+        setAlertContent(`You have selected the option ${option.label}`);
       }
     };
     const clearSelectedOption = () => {
@@ -242,51 +278,11 @@ export default {
         : query.value.trim().length > 0 && (inputIsFocused.value && !props.showMenuOnFocus)
     ));
     //  Controls the options menu positioning
-    const menuPositioning = computed(() => {
-      const marginOffset = 15;
-      const windowWidth = window.innerWidth;
-      const windowHeight = window.innerHeight;
-      const maxWidth = Math.floor(windowWidth / 2) - marginOffset;
-
-      let styles = {
-        height: 'auto',
-        'max-height': `${props.maxMenuHeight}px`,
-        'max-width': `${maxWidth}px`,
-        overflow: 'auto',
-      };
-
-      if (elementRefs.menu) {
-        const {
-          right,
-          left,
-          bottom,
-        } = elementRefs.menu.getBoundingClientRect();
-
-        //  Horizontal alignment
-        if (right > windowWidth) {
-          const w = windowWidth - left - marginOffset;
-
-          styles = {
-            ...styles,
-            width: `${w}px`,
-          };
-        }
-
-        //  Vertical alignment
-        if (bottom > windowHeight && inputIsFocused.value) {
-          styles = {
-            ...styles,
-            bottom: '34px',
-          };
-        } else {
-          styles = {
-            ...styles,
-            top: '34px',
-          };
-        }
+    const menuPosition = computed(() => {
+      if (isMenuVisible) {
+        return menuPositioning(props.maxMenuHeight, elementRefs.menu);
       }
-
-      return styles;
+      return '';
     });
     /**
      * DYNAMIC CLASSES
@@ -309,9 +305,20 @@ export default {
         // Enter
         case 13:
           if (activeElement.value !== null) {
-            setSelectedOption(filteredOptions
+            let options = filteredOptions
               .value
-              .find(option => option.value === parseInt(activeElement.value.getAttribute('value'), 10)));
+              .find(option => option.value === parseInt(activeElement.value.getAttribute('value'), 10));
+
+            if (options.length === 0) {
+              options = [{
+                id: 0,
+                label: 'No match',
+                disabled: true,
+              }];
+            }
+
+            setSelectedOption(options);
+
             setTimeout(() => {
               blurInput();
             }, 60);
@@ -353,16 +360,23 @@ export default {
       const option = document.querySelector(`[name="${props.optionsName}"]:not(:disabled):nth-child(${newIndex})`);
 
       if (option !== null) {
+        const remainingElements = document
+          .querySelectorAll(`[name="${props.optionsName}"]:not(:nth-child(${newIndex}))`);
+
         setActiveElement(option);
         //  Add selected state to option item
         option.classList.add('is-highlighted');
+        option.setAttribute('aria-selected', true);
+
+        setAlertContent(`${option.getAttribute('content')} (${newIndex} of ${remainingElements.length + 1})`);
+
         // option.scrollIntoView();
         scrollIntoView(elementRefs.menu, option);
         //  Remove select state from all other option items
-        document
-          .querySelectorAll(`[name="${props.optionsName}"]:not(:nth-child(${newIndex}))`)
+        remainingElements
           .forEach((el) => {
             el.classList.remove('is-highlighted');
+            el.setAttribute('aria-selected', false);
           });
       } else {
         resetOptionIndex();
@@ -388,10 +402,11 @@ export default {
       renderedOptionLabel,
       setSelectedOption,
       filteredOptions,
-      menuPositioning,
+      menuPosition,
       isMenuVisible,
       autocompleteClassObject,
       optionClassObject,
+      alertDialog,
     };
   },
 };
@@ -526,13 +541,14 @@ export default {
         cursor: default;
       }
 
-      /deep/ b {
-        color: $un-gray2!important;
+      /deep/ mark {
+        color: $un-gray2;
       }
     }
 
-    /deep/ b {
+    /deep/ mark {
       color: $un-purple;
+      background-color: transparent;
     }
   }
 }

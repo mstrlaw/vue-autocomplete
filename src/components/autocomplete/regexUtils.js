@@ -75,7 +75,7 @@ export function highlightMatches(query, originalString, highlightClass) {
       indexes = indexes.sort((a, b) => b.position - a.position);
 
       indexes.forEach((index) => {
-        highlightedString = `${highlightedString.slice(0, index.position)}<b class="${highlightClass}">${index.str}</b>${highlightedString.substr(index.position + index.length)}`;
+        highlightedString = `${highlightedString.slice(0, index.position)}<mark class="${highlightClass}">${index.str}</mark>${highlightedString.substr(index.position + index.length)}`;
       });
     }
   }

@@ -44,10 +44,63 @@ export default function useDomHandler() {
     }
   };
 
+  const menuPositioning = (maxHeight, element) => {
+    /**
+     * Max-height
+     * Menu element
+     */
+    const marginOffset = 15;
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    const maxWidth = Math.floor(windowWidth / 2) - marginOffset;
+
+    let styles = {
+      height: 'auto',
+      'max-height': `${maxHeight}px`,
+      'max-width': `${maxWidth}px`,
+      overflow: 'auto',
+    };
+
+    if (element) {
+      const {
+        right,
+        left,
+        bottom,
+      } = element.getBoundingClientRect();
+
+      //  Horizontal alignment
+      if (right > windowWidth) {
+        const w = windowWidth - left - marginOffset;
+
+        styles = {
+          ...styles,
+          width: `${w}px`,
+        };
+      }
+
+      //  Vertical alignment
+      // if (bottom > windowHeight && inputIsFocused.value) {
+      if (bottom > windowHeight) {
+        styles = {
+          ...styles,
+          bottom: '34px',
+        };
+      } else {
+        styles = {
+          ...styles,
+          top: '34px',
+        };
+      }
+    }
+
+    return styles;
+  };
+
   return {
     activeElement,
     setActiveElement,
     clearActiveElement,
     scrollIntoView,
+    menuPositioning,
   };
 }

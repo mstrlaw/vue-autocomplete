@@ -8,17 +8,9 @@ import {
 export default function useFilterOptions(query = '', options = []) {
   const searchOptions = (q) => {
     const regexp = buildSearchRegExp(q);
-    const results = options.filter((item) => {
-      return item.label.match(regexp) !== null && !item.disabled;
-    });
+    const results = options.filter(item => (item.label.match(regexp) !== null && !item.disabled));
 
-    return results.length > 0
-      ? results
-      : [{
-        id: 0,
-        label: 'No match',
-        disabled: true,
-      }];
+    return results;
   };
 
   const filteredOptions = computed(() => {
