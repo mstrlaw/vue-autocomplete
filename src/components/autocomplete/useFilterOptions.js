@@ -3,7 +3,7 @@ import {
 } from '@vue/composition-api';
 import {
   buildSearchRegExp,
-} from './regexUtils';
+} from '@/utilities/regexes';
 
 export default function useFilterOptions(query = '', options = []) {
   const searchOptions = (q) => {

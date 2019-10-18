@@ -44,7 +44,7 @@ export default function useDomHandler() {
     }
   };
 
-  const menuPositioning = (maxHeight, element) => {
+  const positionElement = (maxHeight, element) => {
     /**
      * Max-height
      * Menu element
@@ -101,6 +101,6 @@ export default function useDomHandler() {
     setActiveElement,
     clearActiveElement,
     scrollIntoView,
-    menuPositioning,
+    positionElement,
   };
 }

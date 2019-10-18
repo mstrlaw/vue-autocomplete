@@ -82,7 +82,7 @@ import {
 } from '@vue/composition-api';
 import {
   highlightMatches,
-} from './regexUtils';
+} from '@/utilities/regexes';
 import useFilterOptions from '@/components/autocomplete/useFilterOptions';
 import useDomHandler from '@/components/autocomplete/useDomHandler';
 /*
@@ -215,7 +215,7 @@ export default {
       activeElement,
       setActiveElement,
       scrollIntoView,
-      menuPositioning,
+      positionElement,
     } = useDomHandler();
     const {
       filteredOptions,
@@ -280,7 +280,7 @@ export default {
     //  Controls the options menu positioning
     const menuPosition = computed(() => {
       if (isMenuVisible) {
-        return menuPositioning(props.maxMenuHeight, elementRefs.menu);
+        return positionElement(props.maxMenuHeight, elementRefs.menu);
       }
       return '';
     });
